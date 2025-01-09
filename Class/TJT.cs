@@ -21,8 +21,16 @@ namespace TJTExplorer.Class
     {
         public List<TJTarFile> Files { get; private set; }
         public string Version { get; private set; }
+
+        //For V1.00
         public DateTime ContentStartDate { get; private set; }
         public DateTime ContentEndDate { get; private set; }
+
+        //For V1.01
+        public int Volume { get; private set; }
+        public string ProgramVersion { get; private set; }
+        public string ImageVersion { get; private set; }
+        public string NewsongVersion { get; private set; }
 
         //Const value
         private const uint fileHeaderSize = 0x84;
@@ -44,6 +52,8 @@ namespace TJTExplorer.Class
             this.ContentStartDate = DateTime.Now;
             this.ContentEndDate = DateTime.Now;
             this.Version = TJTarVersionStr.VER100;
+
+
         }
 
         private bool CheckTJTCRC(ushort originCRC, uint bodyStartOffset)
@@ -80,6 +90,7 @@ namespace TJTExplorer.Class
                 //return finalCRC == (short)originCRC;
 
                 //아직 계산방법 모름
+                //crc16인건 맞음, 허나 업데이트 과정에서 crc를 확인하진 않는듯?
                 return true;
             }
             else
@@ -112,11 +123,11 @@ namespace TJTExplorer.Class
             tjtReader = new BinaryReader(new FileStream(filename, FileMode.Open, FileAccess.Read));
 
             ushort TJTarCRC16 = tjtReader.ReadUInt16();
-            this.Version = Encoding.ASCII.GetString(tjtReader.ReadBytes(0x0E)).Split('\0')[0];
+            this.Version = Encoding.ASCII.GetString(tjtReader.ReadBytes(0x0A)).Split('\0')[0];
 
             if (this.Version == TJTarVersionStr.VER100)
             {
-                uint unk = tjtReader.ReadUInt32();
+                tjtReader.BaseStream.Seek(0x14, 0);
                 uint FileCount = tjtReader.ReadUInt32();
                 uint bodySize = tjtReader.ReadUInt32();
                 string startD = Encoding.ASCII.GetString(tjtReader.ReadBytes(8)).Split('\0')[0];
@@ -158,12 +169,20 @@ namespace TJTExplorer.Class
             }
             else if(this.Version == TJTarVersionStr.VER101)
             {
-                //일단 모르는 부분은 스킵
+                this.ProgramVersion = Encoding.ASCII.GetString(tjtReader.ReadBytes(5)).Replace("\x00", "");
+                this.ImageVersion = Encoding.ASCII.GetString(tjtReader.ReadBytes(5)).Replace("\x00", "");
+                this.NewsongVersion = Encoding.ASCII.GetString(tjtReader.ReadBytes(8)).Replace("\x00", "");
+                this.Volume = tjtReader.ReadInt32();
+
+                //TotalHeaderSize long
+                tjtReader.ReadUInt64();
+                //InfoHeaderSize long
+                tjtReader.ReadUInt64();
+
                 tjtReader.BaseStream.Seek(0x32, 0);
 
-                uint FileCount = tjtReader.ReadUInt32();
-                uint unknown  = tjtReader.ReadUInt32();
-                uint bodySize = tjtReader.ReadUInt32();
+                uint FileCount = (uint)tjtReader.ReadUInt64();
+                uint bodySize = (uint)tjtReader.ReadUInt64();
                 
 
                 //CRC16 + TJT헤더크기 + (파일헤더크기 * 파일개수) = 데이터 시작 오프셋
