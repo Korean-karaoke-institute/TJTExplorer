@@ -44,4 +44,4 @@ jobs:
         # Artifact name
         name: TJTExplorer_${{ matrix.configuration }}
         # Path of the directory containing the static assets.
-        path: TJTExplorer\bin\${{ matrix.configuration }}
+        path: TJTExplorer\${{ matrix.configuration }}
