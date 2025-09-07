@@ -279,6 +279,38 @@ namespace TJTExplorer.Class
 
         }
 
+        public async Task ExtractAllFileAsync(TJTarFile[] file, string outFolderName, IProgress<int> progress = null)
+        {
+            
+
+            await Task.Run(() => {
+                if (!Directory.Exists(outFolderName))
+                {
+                    Directory.CreateDirectory(outFolderName);
+                }
+                for (int i = 0; i < file.Length; i++)
+                {
+                    //string outfileName = Path.GetFileName(file[i].Name);
+                    bool hasFolder = file[i].Name.Contains("/");
+                    if(hasFolder) {
+                        string dir = Path.GetDirectoryName(file[i].Name).Replace("/", "\\");
+                        string createdir = Path.Combine(outFolderName, dir);
+                        if(!Directory.Exists(createdir))
+                        {
+                            Directory.CreateDirectory(createdir);
+                        }
+                    }
+
+                    ExtractFile(file[i], Path.Combine(outFolderName, file[i].Name));
+
+                    //백분율로 진행률 보고
+                    if (progress != null) progress.Report((int)(((i + 1) / (float)file.Length) * 100));
+                }
+            });
+
+
+        }
+
         public void ExtractFile(TJTarFile file, string outFileName)
         {
             using (BinaryWriter writer = new BinaryWriter(new FileStream(outFileName, FileMode.Create)))

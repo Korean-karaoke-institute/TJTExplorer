@@ -451,7 +451,26 @@ namespace TJTExplorer
 
         private void extractAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
-           
+            VistaFolderBrowserDialog folderDialog = new VistaFolderBrowserDialog();
+            if (folderDialog.ShowDialog() == DialogResult.OK)
+            {
+                string rootDir = folderDialog.SelectedPath;
+                this.TJTFile.ExtractAllFileAsync(this.TJTFile.Files.ToArray(), rootDir, new Progress<int>((cnt) =>
+                {
+                    this.Invoke((Action)(() =>
+                    {
+                        toolStripProgressBar1.Value = cnt;
+                        toolStripStatusLabel1.Text = $"전체 파일 추출 중... ({cnt}/{toolStripProgressBar1.Maximum})";
+                    }));
+                })).GetAwaiter().OnCompleted(() =>
+                {
+                    this.Invoke((Action)(() =>
+                    {
+                        toolStripStatusLabel1.Text = $"전체 {TJTFile.Files.Count}개 파일을 \"{rootDir}\" 폴더에 추출했습니다.";
+                        toolStripProgressBar1.Value = 0;
+                    }));
+                });
+            }
         }
 
         private void removeSelectedToolStripMenuItem_Click(object sender, EventArgs e)
